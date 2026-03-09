@@ -1,53 +1,32 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } 
-from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const MODEL_NAME = "gemini-flash-latest";
-const API_KEY = "AIzaSyAZ4_s_8YzuZKPR-lCm8mU64EymVqLBdC8";
+const apiKey = "AIzaSyD33IsfcbNw3Pa_zLwM2dMXtK4BREGqUlY";
 
 async function runChat(prompt) {
-  const genAI = new GoogleGenerativeAI(API_KEY);
 
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
+  const ai = new GoogleGenAI({
+    apiKey: apiKey,
   });
 
-  const generationConfig = {
-    temperature: 0.9,
-    topK: 1,
-    topP: 1,
-    maxOutputTokens: 2048,
-  };
+  const model = "gemini-2.5-flash";
 
-  const safetySettings = [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-    },
-  ];
-
-  const chat = model.startChat({
-    generationConfig,
-    safetySettings,
-    history: [],
+  const response = await ai.models.generateContentStream({
+    model: model,
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
   });
 
-  const result = await chat.sendMessage(prompt);
-  const response = result.response;
+  let resultText = "";
 
-  console.log(response.text());
-  return response.text();
+  for await (const chunk of response) {
+    resultText += chunk.text;
+  }
+
+  return resultText;
 }
 
 export default runChat;
